@@ -96,7 +96,7 @@ vm:
 	_, err, c := startVcSim(t)
 	assert.NoError(t, err)
 
-	pc, err := NewCollector(c, logrus.New(), tmpfile.Name(), false, 2, "100", "50")
+	pc, err := NewCollector(c, logrus.New(), false, tmpfile.Name(), false, 2, "100", "50")
 	assert.NoError(t, err)
 	tmpfile.Close()
 	assert.Len(t, pc.MetricDefinition.Host, 2)
@@ -261,6 +261,58 @@ func TestMultipleEntities(t *testing.T) {
 	testTwoCunters(t, perfMetricsByRef, differentHost)
 }
 
+func TestInstanceValues(t *testing.T) {
+	p := PerfCollector{
+		logger: logrus.New(),
+		metricsAvaliableByID: map[int32]string{
+			99:  "SingleInstanceCounter",
+			100: "MultipleInstanceCounter1",
+			101: "MultipleInstanceCounter2",
+			3:   "NotUsed",
+		},
+		metricsAvaliableByName: map[string]int32{
+			"SingleInstanceCounter":    99,
+			"MultipleInstanceCounter1": 100,
+			"MultipleInstanceCounter2": 101,
+			"NotUsed":                  3,
+		},
+		considerInstances: true,
+	}
+
+	//No Panic expected if passing nil
+	assert.NotPanics(t, func() { p.processEntityMetrics(nil, nil) }, "we expect the function not to panic")
+
+	pem := &types.PerfEntityMetric{}
+	perfMetricsByRef := map[types.ManagedObjectReference][]PerfMetric{}
+	//No panic expected if passing empty struct
+	assert.NotPanics(t, func() { p.processEntityMetrics(pem, perfMetricsByRef) }, "we expect the function not to panic")
+
+	hostEntity := types.ManagedObjectReference{Type: "Host", Value: "Host-155"}
+
+	pemPopulated := &types.PerfEntityMetric{
+		PerfEntityMetricBase: types.PerfEntityMetricBase{
+			Entity: hostEntity,
+		},
+		SampleInfo: []types.PerfSampleInfo{},
+		Value: append([]types.BasePerfMetricSeries{},
+			returnPerfMetricIntSeries(100, "Instance1", 100),
+			returnPerfMetricIntSeries(100, "Instance2", 200),
+			returnPerfMetricIntSeries(100, "Instance3", 300),
+			returnPerfMetricIntSeries(100, "Instance4", 400),
+			returnPerfMetricIntSeries(100, "Instance5", 500),
+			returnPerfMetricIntSeries(100, "", 300),
+			returnPerfMetricIntSeries(101, "Instance1", 10),
+			returnPerfMetricIntSeries(101, "Instance2", 20),
+			returnPerfMetricIntSeries(101, "Instance3", 30),
+			returnPerfMetricIntSeries(101, "Instance4", 40),
+			returnPerfMetricIntSeries(101, "Instance5", 50),
+			returnPerfMetricIntSeries(101, "", 130),
+			returnPerfMetricIntSeries(99, "", 15)),
+	}
+	assert.NotPanics(t, func() { p.processEntityMetrics(pemPopulated, perfMetricsByRef) }, "we expect the function not to panic")
+	testInstanceValues(t, perfMetricsByRef, hostEntity)
+}
+
 func TestPerfEvaluer(t *testing.T) {
 	p := PerfCollector{
 		logger:                 logrus.New(),
@@ -320,6 +372,67 @@ func testTwoCunters(t *testing.T, perfMetricsByRef map[types.ManagedObjectRefere
 	for _, val := range perfMetricsByRef[hostEntity] {
 		if val.Counter == "MultipleInstanceCounter" {
 			assert.Equal(t, int64(150), val.Value)
+		}
+		if val.Counter == "SingleInstanceCounter" {
+			assert.Equal(t, int64(15), val.Value)
+		}
+		if val.Counter == "NotUsed" {
+			assert.Fail(t, "Not used counter should not be present")
+		}
+	}
+}
+
+func testInstanceValues(t *testing.T, perfMetricsByRef map[types.ManagedObjectReference][]PerfMetric, hostEntity types.ManagedObjectReference) {
+	for _, val := range perfMetricsByRef[hostEntity] {
+		if val.Counter == "MultipleInstanceCounter1" {
+
+			// The accumulated value should be 300
+			assert.Equal(t, int64(300), val.Value)
+
+			// Instance 1
+			assert.Equal(t, "Instance1", val.InstanceValues[0].Name)
+			assert.Equal(t, int64(100), val.InstanceValues[0].Value)
+
+			// Instance 2
+			assert.Equal(t, "Instance2", val.InstanceValues[1].Name)
+			assert.Equal(t, int64(200), val.InstanceValues[1].Value)
+
+			// Instance 3
+			assert.Equal(t, "Instance3", val.InstanceValues[2].Name)
+			assert.Equal(t, int64(300), val.InstanceValues[2].Value)
+
+			// Instance 4
+			assert.Equal(t, "Instance4", val.InstanceValues[3].Name)
+			assert.Equal(t, int64(400), val.InstanceValues[3].Value)
+
+			// Instance 5
+			assert.Equal(t, "Instance5", val.InstanceValues[4].Name)
+			assert.Equal(t, int64(500), val.InstanceValues[4].Value)
+		}
+		if val.Counter == "MultipleInstanceCounter2" {
+
+			// The accumulated value should be 30
+			assert.Equal(t, int64(30), val.Value)
+
+			// Instance 1
+			assert.Equal(t, "Instance1", val.InstanceValues[0].Name)
+			assert.Equal(t, int64(10), val.InstanceValues[0].Value)
+
+			// Instance 2
+			assert.Equal(t, "Instance2", val.InstanceValues[1].Name)
+			assert.Equal(t, int64(20), val.InstanceValues[1].Value)
+
+			// Instance 3
+			assert.Equal(t, "Instance3", val.InstanceValues[2].Name)
+			assert.Equal(t, int64(30), val.InstanceValues[2].Value)
+
+			// Instance 4
+			assert.Equal(t, "Instance4", val.InstanceValues[3].Name)
+			assert.Equal(t, int64(40), val.InstanceValues[3].Value)
+
+			// Instance 5
+			assert.Equal(t, "Instance5", val.InstanceValues[4].Name)
+			assert.Equal(t, int64(50), val.InstanceValues[4].Value)
 		}
 		if val.Counter == "SingleInstanceCounter" {
 			assert.Equal(t, int64(15), val.Value)
