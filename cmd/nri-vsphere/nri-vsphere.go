@@ -100,8 +100,8 @@ func main() {
 	}
 
 	if cfg.PerfMetricsCollectionEnabled() {
-		perfCollector, err := performance.NewCollector(cfg.VMWareClient, cfg.Logrus, cfg.Args.PerfMetricFile,
-			cfg.Args.LogAvailableCounters, cfg.Args.PerfLevel, cfg.Args.BatchSizePerfEntities,
+		perfCollector, err := performance.NewCollector(cfg.VMWareClient, cfg.Logrus, cfg.Args.ConsiderInstances,
+			cfg.Args.PerfMetricFile, cfg.Args.LogAvailableCounters, cfg.Args.PerfLevel, cfg.Args.BatchSizePerfEntities,
 			cfg.Args.BatchSizePerfMetrics)
 		if err != nil {
 			cfg.Logrus.WithError(err).Fatal("failed to create performance collector")

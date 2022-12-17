@@ -37,6 +37,7 @@ type ArgumentList struct {
 	PerfLevel                int    `default:"1" help:"Performance counter level of performance metrics that will be collected"`
 	LogAvailableCounters     bool   `default:"false" help:"Print available performance metrics"`
 	PerfMetricFile           string `default:"" help:"Location of performance metrics configuration file"`
+	ConsiderInstances        bool   `default:"false" help:"The accumuated metrics of entities with multiple instances will be considered separetely"`
 
 	//As a general rule, specify between 10 and 50 entities in a single call to the QueryPerf method.
 	//This is a general recommendation because your system configuration may impose different
@@ -105,6 +106,10 @@ func (c *Config) TagFilteringEnabled() bool {
 
 func (c *Config) PerfMetricsCollectionEnabled() bool {
 	return c.Args.EnableVspherePerfMetrics
+}
+
+func (c *Config) ConsiderInstancesEnabled() bool {
+	return c.Args.ConsiderInstances
 }
 
 func (c *Config) Uptime() time.Duration {
