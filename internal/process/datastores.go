@@ -73,8 +73,31 @@ func createDatastoreSamples(config *config.Config) {
 			// Performance metrics
 			if config.PerfMetricsCollectionEnabled() {
 				perfMetrics := dc.GetPerfMetrics(ds.Self)
+
 				for _, perfMetric := range perfMetrics {
 					checkError(config.Logrus, ms.SetMetric(perfMetricPrefix+perfMetric.Counter, perfMetric.Value, metric.GAUGE))
+
+					// Build metrics block for the instance metrics
+					if config.ConsiderInstancesEnabled() {
+						for key, val := range perfMetric.InstanceValues {
+							_, ims, err := createNewEntityWithMetricSet(config, entityTypeHost+"Instance", entityName, dataStoreID)
+							if err != nil {
+								config.Logrus.WithError(err).
+									WithField("datastoreName", entityName).
+									WithField("dataStoreID", dataStoreID).
+									Error("failed to create metricSet")
+							} else {
+								// Add attributes
+								checkError(config.Logrus, ims.SetMetric("dataStoreID", fmt.Sprintf("%v", dataStoreID), metric.ATTRIBUTE))
+								checkError(config.Logrus, ims.SetMetric("datacenterLocation", fmt.Sprintf("%v", config.Args.DatacenterLocation), metric.ATTRIBUTE))
+								checkError(config.Logrus, ims.SetMetric("datacenterName", fmt.Sprintf("%v", datacenterName), metric.ATTRIBUTE))
+
+								// Add metric of the instance
+								checkError(config.Logrus, ims.SetMetric("instanceName", fmt.Sprintf("%v", key), metric.ATTRIBUTE))
+								checkError(config.Logrus, ims.SetMetric(perfMetricPrefix+perfMetric.Counter, val, metric.GAUGE))
+							}
+						}
+					}
 				}
 			}
 		}
