@@ -4,6 +4,7 @@
 package process
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -162,11 +163,39 @@ func createHostSamples(config *config.Config) {
 			// Performance metrics
 			if config.PerfMetricsCollectionEnabled() {
 				perfMetrics := dc.GetPerfMetrics(host.Self)
+
 				for _, perfMetric := range perfMetrics {
 					checkError(config.Logrus, ms.SetMetric(perfMetricPrefix+perfMetric.Counter, perfMetric.Value, metric.GAUGE))
+
+					// Build metrics block for the instance metrics
+					if config.ConsiderInstancesEnabled() {
+						for key, val := range perfMetric.InstanceValues {
+							_, ims, err := createNewEntityWithMetricSet(config, entityTypeHost+"Instance", entityName, uuid)
+							if err != nil {
+								config.Logrus.WithError(err).
+									WithField("hostName", entityName).
+									WithField("uuid", uuid).
+									Error("failed to create metricSet")
+							} else {
+								// Add attributes
+								checkError(config.Logrus, ims.SetMetric("hostName", fmt.Sprintf("%v", host.Name), metric.ATTRIBUTE))
+								checkError(config.Logrus, ims.SetMetric("datacenterLocation", fmt.Sprintf("%v", config.Args.DatacenterLocation), metric.ATTRIBUTE))
+								checkError(config.Logrus, ims.SetMetric("hypervisorHostname", fmt.Sprintf("%v", hostConfigName), metric.ATTRIBUTE))
+								checkError(config.Logrus, ims.SetMetric("datacenterName", fmt.Sprintf("%v", datacenterName), metric.ATTRIBUTE))
+								checkError(config.Logrus, ims.SetMetric("hypervisorHostname", fmt.Sprintf("%v", hostConfigName), metric.ATTRIBUTE))
+
+								if cluster, ok := dc.Clusters[host.Parent.Reference()]; ok {
+									checkError(config.Logrus, ims.SetMetric("clusterName", fmt.Sprintf("%v", cluster.Name), metric.ATTRIBUTE))
+								}
+
+								// Add metric of the instance
+								checkError(config.Logrus, ims.SetMetric("instanceName", fmt.Sprintf("%v", key), metric.ATTRIBUTE))
+								checkError(config.Logrus, ims.SetMetric(perfMetricPrefix+perfMetric.Counter, val, metric.GAUGE))
+							}
+						}
+					}
 				}
 			}
-
 		}
 	}
 }
