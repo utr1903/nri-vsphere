@@ -34,6 +34,8 @@ belonging to a single object, but only the average value is stored.
 For example, the counter `cpu.usage.average` returns multiple values: one for each CPU core of an host.
 The integration uses these values to compute the average, that is then included in the `VSphereHostSample` sample.
 
+If you would like to send the metrics of each individual instance, you can use the flag `--consider_instances`. By enabling it, the integration will track the every fetched instance value and send them to separate extended samples such as `VSphereVMInstanceSample`. If a VM has 4 CPU cores, the integration will send 4 instance values and will store them under 4 rows under the `VSphereVMInstanceSample` sample. Beware, this corresponds to additional data ingest.
+
 ## Building
 
 If you have downloaded the source code and installed the Go toolchain, you can build and run the vSphere integration locally.
