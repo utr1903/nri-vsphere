@@ -178,6 +178,7 @@ func createHostSamples(config *config.Config) {
 									Error("failed to create metricSet")
 							} else {
 								// Add attributes
+								checkError(config.Logrus, ims.SetMetric("uuid", fmt.Sprintf("%v", uuid), metric.ATTRIBUTE))
 								checkError(config.Logrus, ims.SetMetric("hostName", fmt.Sprintf("%v", host.Name), metric.ATTRIBUTE))
 								checkError(config.Logrus, ims.SetMetric("datacenterLocation", fmt.Sprintf("%v", config.Args.DatacenterLocation), metric.ATTRIBUTE))
 								checkError(config.Logrus, ims.SetMetric("hypervisorHostname", fmt.Sprintf("%v", hostConfigName), metric.ATTRIBUTE))
