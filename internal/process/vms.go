@@ -212,8 +212,45 @@ func createVirtualMachineSamples(config *config.Config) {
 			// Performance metrics
 			if config.PerfMetricsCollectionEnabled() {
 				perfMetrics := dc.GetPerfMetrics(vm.Self)
+
 				for _, perfMetric := range perfMetrics {
 					checkError(config.Logrus, ms.SetMetric(perfMetricPrefix+perfMetric.Counter, perfMetric.Value, metric.GAUGE))
+
+					// Build metrics block for the instance metrics
+					if config.ConsiderInstancesEnabled() {
+						for key, val := range perfMetric.InstanceValues {
+							_, ims, err := createNewEntityWithMetricSet(config, entityTypeVm+"Instance", entityName, instanceUuid)
+							if err != nil {
+								config.Logrus.WithError(err).
+									WithField("vmName", entityName).
+									WithField("instanceUuid", instanceUuid).
+									Error("failed to create metricSet")
+							} else {
+								// Add attributes
+								checkError(config.Logrus, ims.SetMetric("vmName", fmt.Sprintf("%v", vm.Name), metric.ATTRIBUTE))
+								checkError(config.Logrus, ims.SetMetric("vmHost", fmt.Sprintf("%v", vmHost.Name), metric.ATTRIBUTE))
+								checkError(config.Logrus, ims.SetMetric("vmHostname", fmt.Sprintf("%v", vm.Summary.Guest.HostName), metric.ATTRIBUTE))
+								checkError(config.Logrus, ims.SetMetric("vmHostParent", fmt.Sprintf("%v", vmHostParent.Value), metric.ATTRIBUTE))
+								checkError(config.Logrus, ims.SetMetric("datacenterName", fmt.Sprintf("%v", datacenterName), metric.ATTRIBUTE))
+								checkError(config.Logrus, ims.SetMetric("datacenterName", fmt.Sprintf("%v", datacenterName), metric.ATTRIBUTE))
+								checkError(config.Logrus, ims.SetMetric("hypervisorHostname", fmt.Sprintf("%v", hostConfigName), metric.ATTRIBUTE))
+								checkError(config.Logrus, ims.SetMetric("vmConfigName", fmt.Sprintf("%v", vmConfigName), metric.ATTRIBUTE))
+								checkError(config.Logrus, ims.SetMetric("vmInstanceUuid", fmt.Sprintf("%v", instanceUuid), metric.ATTRIBUTE))
+
+								if c, ok := dc.Clusters[vmHostParent]; ok {
+									checkError(config.Logrus, ims.SetMetric("clusterName", fmt.Sprintf("%v", c.Name), metric.ATTRIBUTE))
+								}
+
+								if resourcePool, ok := dc.GetResourcePool(vmResourcePool); ok {
+									checkError(config.Logrus, ims.SetMetric("resourcePoolName", fmt.Sprintf("%v", resourcePool.Name), metric.ATTRIBUTE))
+								}
+
+								// Add metric of the instance
+								checkError(config.Logrus, ims.SetMetric("instanceName", fmt.Sprintf("%v", key), metric.ATTRIBUTE))
+								checkError(config.Logrus, ims.SetMetric(perfMetricPrefix+perfMetric.Counter, val, metric.GAUGE))
+							}
+						}
+					}
 				}
 			}
 

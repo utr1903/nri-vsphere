@@ -390,24 +390,19 @@ func testInstanceValues(t *testing.T, perfMetricsByRef map[types.ManagedObjectRe
 			assert.Equal(t, int64(300), val.Value)
 
 			// Instance 1
-			assert.Equal(t, "Instance1", val.InstanceValues[0].Name)
-			assert.Equal(t, int64(100), val.InstanceValues[0].Value)
+			assert.Equal(t, int64(100), val.InstanceValues["Instance1"])
 
 			// Instance 2
-			assert.Equal(t, "Instance2", val.InstanceValues[1].Name)
-			assert.Equal(t, int64(200), val.InstanceValues[1].Value)
+			assert.Equal(t, int64(200), val.InstanceValues["Instance2"])
 
 			// Instance 3
-			assert.Equal(t, "Instance3", val.InstanceValues[2].Name)
-			assert.Equal(t, int64(300), val.InstanceValues[2].Value)
+			assert.Equal(t, int64(300), val.InstanceValues["Instance3"])
 
 			// Instance 4
-			assert.Equal(t, "Instance4", val.InstanceValues[3].Name)
-			assert.Equal(t, int64(400), val.InstanceValues[3].Value)
+			assert.Equal(t, int64(400), val.InstanceValues["Instance4"])
 
 			// Instance 5
-			assert.Equal(t, "Instance5", val.InstanceValues[4].Name)
-			assert.Equal(t, int64(500), val.InstanceValues[4].Value)
+			assert.Equal(t, int64(500), val.InstanceValues["Instance5"])
 		}
 		if val.Counter == "MultipleInstanceCounter2" {
 
@@ -415,24 +410,19 @@ func testInstanceValues(t *testing.T, perfMetricsByRef map[types.ManagedObjectRe
 			assert.Equal(t, int64(30), val.Value)
 
 			// Instance 1
-			assert.Equal(t, "Instance1", val.InstanceValues[0].Name)
-			assert.Equal(t, int64(10), val.InstanceValues[0].Value)
+			assert.Equal(t, int64(10), val.InstanceValues["Instance1"])
 
 			// Instance 2
-			assert.Equal(t, "Instance2", val.InstanceValues[1].Name)
-			assert.Equal(t, int64(20), val.InstanceValues[1].Value)
+			assert.Equal(t, int64(20), val.InstanceValues["Instance2"])
 
 			// Instance 3
-			assert.Equal(t, "Instance3", val.InstanceValues[2].Name)
-			assert.Equal(t, int64(30), val.InstanceValues[2].Value)
+			assert.Equal(t, int64(30), val.InstanceValues["Instance3"])
 
 			// Instance 4
-			assert.Equal(t, "Instance4", val.InstanceValues[3].Name)
-			assert.Equal(t, int64(40), val.InstanceValues[3].Value)
+			assert.Equal(t, int64(40), val.InstanceValues["Instance4"])
 
 			// Instance 5
-			assert.Equal(t, "Instance5", val.InstanceValues[4].Name)
-			assert.Equal(t, int64(50), val.InstanceValues[4].Value)
+			assert.Equal(t, int64(50), val.InstanceValues["Instance5"])
 		}
 		if val.Counter == "SingleInstanceCounter" {
 			assert.Equal(t, int64(15), val.Value)

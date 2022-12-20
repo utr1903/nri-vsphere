@@ -40,17 +40,11 @@ type PerfCollector struct {
 	batchSizePerfMetrics   int
 }
 
-// This struct is meant to carry the individual instance values
-type InstanceValue struct {
-	Name  string
-	Value int64
-}
-
 //this struct is not needed we can decide to pass more info and process it in the process, it would hide logic
 type PerfMetric struct {
 	Value          int64
 	Counter        string
-	InstanceValues []InstanceValue
+	InstanceValues map[string]int64
 }
 
 func NewCollector(client *govmomi.Client, logger *logrus.Logger, considerInstances bool, perfMetricFile string, logAvailableCounters bool, collectionLevel int, batchSizePerfEntitiesString string, batchSizePerfMetricsString string) (*PerfCollector, error) {
@@ -157,7 +151,7 @@ func (c *PerfCollector) processEntityMetrics(metricsValues *types.PerfEntityMetr
 
 	// If for the same metrics multiple instances are returned we perform the average of the values
 	accumulateMetrics := map[string]*perfEvaluer{}
-	instanceValues := map[string][]InstanceValue{}
+	instanceValues := make(map[string](map[string]int64))
 
 	if metricsValues == nil {
 		return
@@ -173,16 +167,16 @@ func (c *PerfCollector) processEntityMetrics(metricsValues *types.PerfEntityMetr
 		accumulateValues(accumulateMetrics, metricName, metricValue, metricVal)
 
 		// if instances are to be considered -> store every instance value into a map
-		if c.considerInstances && metricValue.GetPerfMetricSeries().Id.Instance != "" {
-			_, ok := instanceValues[metricName]
-			if !ok {
-				instanceValues[metricName] = []InstanceValue{}
+		instanceName := metricValue.GetPerfMetricSeries().Id.Instance
+		if c.considerInstances && instanceName != "" {
+
+			if _, ok := instanceValues[metricName]; !ok {
+				instanceValues[metricName] = make(map[string]int64)
 			}
 
-			instanceValues[metricName] = append(instanceValues[metricName], InstanceValue{
-				Name:  metricValue.GetPerfMetricSeries().Id.Instance,
-				Value: metricVal,
-			})
+			if _, ok := instanceValues[metricName][instanceName]; !ok {
+				instanceValues[metricName][instanceName] = metricVal
+			}
 		}
 	}
 
