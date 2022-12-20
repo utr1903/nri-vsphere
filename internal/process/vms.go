@@ -232,7 +232,6 @@ func createVirtualMachineSamples(config *config.Config) {
 								checkError(config.Logrus, ims.SetMetric("vmHostname", fmt.Sprintf("%v", vm.Summary.Guest.HostName), metric.ATTRIBUTE))
 								checkError(config.Logrus, ims.SetMetric("vmHostParent", fmt.Sprintf("%v", vmHostParent.Value), metric.ATTRIBUTE))
 								checkError(config.Logrus, ims.SetMetric("datacenterName", fmt.Sprintf("%v", datacenterName), metric.ATTRIBUTE))
-								checkError(config.Logrus, ims.SetMetric("datacenterName", fmt.Sprintf("%v", datacenterName), metric.ATTRIBUTE))
 								checkError(config.Logrus, ims.SetMetric("hypervisorHostname", fmt.Sprintf("%v", hostConfigName), metric.ATTRIBUTE))
 								checkError(config.Logrus, ims.SetMetric("vmConfigName", fmt.Sprintf("%v", vmConfigName), metric.ATTRIBUTE))
 								checkError(config.Logrus, ims.SetMetric("vmInstanceUuid", fmt.Sprintf("%v", instanceUuid), metric.ATTRIBUTE))
